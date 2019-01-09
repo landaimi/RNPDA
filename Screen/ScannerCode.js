@@ -3,7 +3,7 @@
  * 功能：扫描二维码
  */
 'use strict';
-import React, {PureComponent} from 'react';
+import React, { PureComponent } from 'react';
 import {
     View,
     Text,
@@ -17,9 +17,8 @@ import {
     Image,
     ImageBackground
 } from 'react-native';
-// import Header from '../../components/header'; //头部导航
 import Camera from 'react-native-camera';
-let {width, height} = Dimensions.get('window');
+let { width, height } = Dimensions.get('window');
 
 export default class MaxCardScreen extends PureComponent {
     static propTypes = {};
@@ -29,9 +28,6 @@ export default class MaxCardScreen extends PureComponent {
         this.state = {
             show: true,
             anim: new Animated.Value(0),
-            camera: {
-                aspect: Camera.constants.Aspect.fill,
-            },
         };
     }
 
@@ -58,52 +54,52 @@ export default class MaxCardScreen extends PureComponent {
 
     //扫描二维码方法
     barcodeReceived = (e) => {
+        Alert.alert(
+            '提示',
+            JSON.stringify(e),
+            [{ text: '确定' }]
+        )
         if (this.state.show) {
             this.state.show = false;
             if (e) {
-                this.props.navigator.pop()
-                // this.props.ReceiveCode(e.data)
-                console.log('jiaojiao---' + e.data)
+                Alert.alert(
+                    '提示',
+                    e.data,
+                    [{ text: '确定' }]
+                )
             } else {
                 Alert.alert(
                     '提示',
                     '扫描失败'
-                        [{text: '确定'}]
+                    [{ text: '确定' }]
                 )
             }
         }
     }
     render() {
         return (
-            <View style={[global.styles.screen]}>
-                {/* <Header title={"扫描二维码"} doneText={"相册"} style={[styles.header]} onPress="photoShow"/> */}
-                <View style={styles.container}>
-                    <Camera
-                        ref={(cam) => { this.camera = cam; }}
-                        style={styles.preview}
-                        aspect={this.state.camera.aspect}
-                        onBarCodeRead={this.barcodeReceived.bind(this)}
-                        barCodeTypes={['qr']}
-                    >
-                        <View
-                            style={{height: Platform.OS == 'ios' ? (height-264)/3:(height-244)/3,width:width,backgroundColor:'rgba(0,0,0,0.5)',}}>
-                        </View>
-                        <View style={{flexDirection:'row'}}>
-                            <View style={styles.itemStyle}/>
-                            <ImageBackground style={styles.rectangle}
-                                   source={''}>
-                                <Animated.View
-                                    style={[styles.animatiedStyle, { transform: [{translateY: this.state.anim.interpolate({inputRange: [0,1], outputRange: [0,200]})}]}]}>
-                                </Animated.View>
-                            </ImageBackground>
-                            <View style={styles.itemStyle}/>
-                        </View>
-                        <View style={{flex:1,backgroundColor:'rgba(0, 0, 0, 0.5)',width:width,alignItems:'center'}}>
-                            <Text style={styles.textStyle}>将二维码放入框内,即可自动扫描</Text>
-                        </View>
-                    </Camera>
+            <Camera
+                ref={(cam) => { this.camera = cam; }}
+                style={styles.preview}
+                onBarCodeRead={this.barcodeReceived.bind(this)}
+            >
+                <View
+                    style={{ height: Platform.OS == 'ios' ? (height - 264) / 3 : (height - 244) / 3, width: width, backgroundColor: 'rgba(0,0,0,0.5)', }}>
                 </View>
-            </View>
+                <View style={{ flexDirection: 'row' }}>
+                    <View style={styles.itemStyle} />
+                    <ImageBackground style={styles.rectangle}
+                        source={''}>
+                        <Animated.View
+                            style={[styles.animatiedStyle, { transform: [{ translateY: this.state.anim.interpolate({ inputRange: [0, 1], outputRange: [0, 200] }) }] }]}>
+                        </Animated.View>
+                    </ImageBackground>
+                    <View style={styles.itemStyle} />
+                </View>
+                <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', width: width, alignItems: 'center' }}>
+                    <Text style={styles.textStyle}>将二维码放入框内,即可自动扫描</Text>
+                </View>
+            </Camera>
         );
     }
 

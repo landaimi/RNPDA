@@ -10,7 +10,8 @@
     "events": "^3.0.0",
     "native-base": "^2.10.0",
     "react": "16.6.3",
-    "react-native-camera": "git+https://github.com/lwansbrough/react-native-camera.git",
+    "react-native": "^0.57.8",
+    "react-native-camera": "^1.8.0",
     "react-native-gesture-handler": "^1.0.12",
     "react-native-storage": "^1.0.0-beta.0",
     "react-navigation": "^3.0.9"
