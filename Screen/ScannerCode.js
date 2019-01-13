@@ -3,159 +3,107 @@
  * 功能：扫描二维码
  */
 'use strict';
-import React, { PureComponent } from 'react';
+import React from 'react';
 import {
     View,
     Text,
     StyleSheet,
-    Platform,
     Dimensions,
     Animated,
-    InteractionManager,
     Easing,
     Alert,
-    Image,
-    ImageBackground
 } from 'react-native';
-import Camera from 'react-native-camera';
+import { RNCamera } from 'react-native-camera';
 let { width, height } = Dimensions.get('window');
-
-export default class MaxCardScreen extends PureComponent {
-    static propTypes = {};
-
+class ScanScreen extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            show: true,
-            anim: new Animated.Value(0),
+            moveAnim: new Animated.Value(0)
         };
     }
 
     componentDidMount() {
-        InteractionManager.runAfterInteractions(() => {
-            this.startAnimation()
-        });
+        this.startAnimation();
     }
 
-    startAnimation() {
-        if (this.state.show) {
-            this.state.anim.setValue(0)
-            Animated.timing(this.state.anim, {
-                toValue: 1,
+    startAnimation = () => {
+        this.state.moveAnim.setValue(0);
+        Animated.timing(
+            this.state.moveAnim,
+            {
+                toValue: -200,
                 duration: 1500,
-                easing: Easing.linear,
-            }).start(() => this.startAnimation());
-        }
-    }
-
-    componentWillUnmount() {
-        this.state.show = false;
-    }
-
-    //扫描二维码方法
-    barcodeReceived = (e) => {
-        Alert.alert(
-            '提示',
-            JSON.stringify(e),
-            [{ text: '确定' }]
-        )
-        if (this.state.show) {
-            this.state.show = false;
-            if (e) {
-                Alert.alert(
-                    '提示',
-                    e.data,
-                    [{ text: '确定' }]
-                )
-            } else {
-                Alert.alert(
-                    '提示',
-                    '扫描失败'
-                    [{ text: '确定' }]
-                )
+                easing: Easing.linear
             }
-        }
-    }
+        ).start(() => this.startAnimation());
+    };
+    //  识别二维码
+    onBarCodeRead = (result) => {
+        const { onScanned } = this.props;
+
+        Alert.alert('提示', JSON.stringify(result), [{ text: '确定', onPress: () => console.log(JSON.stringify(result)) },]);
+    };
+
     render() {
         return (
-            <Camera
-                ref={(cam) => { this.camera = cam; }}
-                style={styles.preview}
-                onBarCodeRead={this.barcodeReceived.bind(this)}
-            >
-                <View
-                    style={{ height: Platform.OS == 'ios' ? (height - 264) / 3 : (height - 244) / 3, width: width, backgroundColor: 'rgba(0,0,0,0.5)', }}>
-                </View>
-                <View style={{ flexDirection: 'row' }}>
-                    <View style={styles.itemStyle} />
-                    <ImageBackground style={styles.rectangle}
-                        source={''}>
-                        <Animated.View
-                            style={[styles.animatiedStyle, { transform: [{ translateY: this.state.anim.interpolate({ inputRange: [0, 1], outputRange: [0, 200] }) }] }]}>
-                        </Animated.View>
-                    </ImageBackground>
-                    <View style={styles.itemStyle} />
-                </View>
-                <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', width: width, alignItems: 'center' }}>
-                    <Text style={styles.textStyle}>将二维码放入框内,即可自动扫描</Text>
-                </View>
-            </Camera>
+            <View style={styles.container}>
+                <RNCamera
+                    ref={ref => {
+                        this.camera = ref;
+                    }}
+                    style={styles.preview}
+                    type={RNCamera.Constants.Type.back}
+                    flashMode={RNCamera.Constants.FlashMode.on}
+                    onBarCodeRead={this.onBarCodeRead}
+                >
+                    <View style={styles.rectangleContainer}>
+                        <View style={styles.rectangle}/>
+                        <Animated.View style={[
+                            styles.border,
+                            {transform: [{translateY: this.state.moveAnim}]}]}/>
+                        <Text style={styles.rectangleText}>将二维码放入框内，即可自动扫描</Text>
+                    </View>
+                    </RNCamera>
+            </View>
         );
     }
-
 }
+
+export default ScanScreen;
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: '#efefef'
+        flexDirection: 'row'
     },
-    itemStyle: {
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        width: (width - 200) / 2,
-        height: 200
-    },
-    textStyle: {
-        color: '#666',
-        marginTop: 20,
-        fontSize: 16
-    },
-    navTitleStyle: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-    navBarStyle: { // 导航条样式
-        height: Platform.OS == 'ios' ? 64 : 44,
-        backgroundColor: 'rgba(34,110,184,1.0)',
-        // 设置主轴的方向
-        flexDirection: 'row',
-        // 垂直居中 ---> 设置侧轴的对齐方式
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
-
-    leftViewStyle: {
-        // 绝对定位
-        // 设置主轴的方向
-        flexDirection: 'row',
-        position: 'absolute',
-        left: 10,
-        bottom: Platform.OS == 'ios' ? 15 : 12,
-        alignItems: 'center',
-        width: 30
-    },
-    animatiedStyle: {
-        height: 2,
-        backgroundColor: '#00FF00'
-    },
-
     preview: {
         flex: 1,
+        justifyContent: 'flex-end',
+        alignItems: 'center'
+    },
+    rectangleContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)'
     },
     rectangle: {
-        height: 200,
-        width: 200,
+        height: 280,
+        width: 280,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'transparent'
+    },
+    rectangleText: {
+        flex: 0,
+        color: '#fff',
+        marginTop: 10
+    },
+    border: {
+        flex: 0,
+        width: 280,
+        height: 2,
+        backgroundColor: '#00FF00',
     }
 });

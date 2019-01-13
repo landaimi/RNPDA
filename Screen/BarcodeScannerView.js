@@ -168,15 +168,9 @@ export default class BarcodeScannerView extends React.Component {
   render() {
     const { hasCameraPermission, isCamera } = this.state;
     if(isCamera){
-      // if (hasCameraPermission === null) {
-      //   return <Text>请开启访问摄像头权限</Text>;
-      // }
-      // if (hasCameraPermission === false) {
-      //   return <Text>No access to camera</Text>;
-      // }
       return (
         <View style={{ flex: 1 , backgroundColor: 'white'}}>
-          <ScannerCode />
+          <ScannerCode onScanned={this.redirect}/>
         </View>
       );
     }
