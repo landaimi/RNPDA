@@ -1,10 +1,10 @@
 import React from 'react';
 import {
-    View, Text, Dimensions, StyleSheet, Image, ScrollView,
-    BackHandler, TouchableOpacity, TextInput, ToastAndroid,
-    Alert, KeyboardAvoidingView, Keyboard,
+    View, Text, Dimensions, StyleSheet, ScrollView,
+    BackHandler, TouchableOpacity, TextInput,
+    Alert,
 } from 'react-native';
-import { Container, Header, Content, Form, Item, Picker } from 'native-base';
+import { Item, Picker } from 'native-base';
 import API from './Api';
 
 const { width, height } = Dimensions.get('window');
@@ -154,15 +154,26 @@ class InventoryInfo extends React.Component {
         } else {
             this.urlConfig = config.url;
         }
-        this.keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', event => this._keyboardDidShow(event));
-        this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => this._keyboardDidHide());
         this.setState({ data: this.props.navigation.state.params });
         this._willBlurSubscription = this.props.navigation.addListener('willBlur', payload =>
             BackHandler.removeEventListener('hardwareBackPress', this.onBackButtonPressAndroid)
         );
         const paramData = this.props.navigation.state.params;
-        const { data, userId, planId, type, itemInfo, itemId, dict1, dict2 } = paramData;
+        const { data, userId, planId, type, itemInfo, itemId, dict1, dict2,
+            position, report, result } = paramData;
+
         this.setState({ code: data, userId, planId, type, itemInfo, itemId, dict1, dict2, });
+        //默认值
+        if(type === 1){
+            this.setState({dict1Index: ''+report, dict2Index: position});
+        }
+        if(type === 2){
+            this.setState({dict1Index: ''+result, remark: report, position: position, });
+        }
+        if(type === 3){
+            this.setState({remark: report});
+        }
+
         if (type === 2) {
             const dict = [
                 {
@@ -178,14 +189,6 @@ class InventoryInfo extends React.Component {
         }
     }
 
-    _keyboardDidShow(event) {
-        this.setState({ keyboardHeight: event.endCoordinates.height });
-    }
-
-    _keyboardDidHide() {
-        this.setState({ keyboardHeight: 0 });
-    }
-
     onBackButtonPressAndroid = () => {
         const { type, userId } = this.state;
         if (type === 1) {
@@ -196,35 +199,32 @@ class InventoryInfo extends React.Component {
             this.props.navigation.navigate('MaintainView', { userId });
         }
         return true;
-
     };
 
     componentWillUnmount() {
-        this.keyboardDidShowListener.remove();
-        this.keyboardDidHideListener.remove();
         this._didFocusSubscription && this._didFocusSubscription.remove();
         this._willBlurSubscription && this._willBlurSubscription.remove();
-
     }
 
     onSubmit() {
         const { dict1Index, dict2Index, remark, position, userId, itemId, type } = this.state;
-        console.log('dict1Index', dict1Index, dict2Index);
         if (dict1Index === undefined) {
-            if(type===1){
+            if (type === 1) {
                 Alert.alert('提示', "请选择盘点结果！", [{
                     text: '确定',
                     onPress: () => console.log("请选择盘点结果！")
                 },]);
-            }else{
+                return;
+            }
+            if (type === 2) {
                 Alert.alert('提示', "请选择巡检结果！", [{
                     text: '确定',
                     onPress: () => console.log("请选择巡检结果！")
                 },]);
+                return;
             }
-            return;
         }
-        if(type === 1 && dict2Index === undefined){
+        if (type === 1 && dict2Index === undefined) {
             Alert.alert('提示', "请选择盘点位置！", [{
                 text: '确定',
                 onPress: () => console.log("请选择盘点位置！")
@@ -255,32 +255,43 @@ class InventoryInfo extends React.Component {
             formData.append("report", dict1Index);
             formData.append("position", dict2Index);
         }
+        if (type === 3) {
+            url = this.urlConfig + API.location + "baoyangSubmit";
+            formData.append("userId", userId);
+            formData.append("itemId", itemId);
+            formData.append("report", remark);
+        }
         const that = this;
-        fetch(url, {
-            method: "POST",
-            body: formData,
-        }).then(function (res) {
-            if (res.ok) {
-                res.json().then(function (json) {
-                    if (json.success) {
-                        Alert.alert('提示', json.msg, [{
-                            text: '确定',
-                            onPress: () => that.onBackButtonPressAndroid()
-                        },]);
-                    } else if (json.msg) {
-                        Alert.alert('提示', json.msg, [{
-                            text: '确定',
-                            onPress: () => console.log('request fail ! res=', json)
-                        },]);
-                    }
-                });
-            } else {
-                Alert.alert('提示', '请求失败', [{ text: '确定', onPress: () => console.log('request failed! res=', res) },]);
-            }
-        }).catch(function (e) {
-            console.error("fetch error!", e);
-            Alert.alert('提示', '系统错误', [{ text: '确定', onPress: () => console.error('request error!') },]);
-        });
+        try {
+            fetch(url, {
+                method: "POST",
+                body: formData,
+            }).then(function (res) {
+                if (res.ok) {
+                    res.json().then(function (json) {
+                        if (json.success) {
+                            Alert.alert('提示', json.msg, [{
+                                text: '确定',
+                                onPress: () => that.onBackButtonPressAndroid()
+                            },]);
+                        } else if (json.msg) {
+                            Alert.alert('提示', json.msg, [{
+                                text: '确定',
+                                onPress: () => console.log('request fail ! res=', json)
+                            },]);
+                        }
+                    });
+                } else {
+                    Alert.alert('提示', '请求失败', [{ text: '确定', onPress: () => console.log('request failed! res=', res) },]);
+                }
+            }).catch(function (e) {
+                console.log("fetch error!", e);
+                Alert.alert('提示', '请求失败！', [{ text: '确定', onPress: () => console.log('request error!') },]);
+            });
+        } catch (e) {
+            console.log("fetch error!", e);
+            Alert.alert('提示', '请求失败！', [{ text: '确定', onPress: () => console.log('request error!') },]);
+        }
     }
 
     onValueChange1(value) {
@@ -297,7 +308,8 @@ class InventoryInfo extends React.Component {
     render() {
         const sty = style;
         const { itemInfo, dict1, dict1Index,
-            dict2, dict2Index, type,} = this.state;
+            dict2, dict2Index, type, remark } = this.state;
+        const checkType = type === 1 ? '盘点' : (type === 2 ? '巡检' : '保养')
         return (
             <View style={[sty.page, sty.pageContent, { paddingBottom: this.state.keyboardHeight }]}>
                 <ScrollView ref={(ref) => { this.scrollView = ref; }}
@@ -415,51 +427,51 @@ class InventoryInfo extends React.Component {
                             </Text>
                         </View>
                     </View>
-                    <View style={sty.content}>
-                        <Text style={[sty.opc, sty.width, sty.mgr_5, { fontSize: 15, color: '#39333d' }]}>
-                            {type === 1 ? '盘点结果': '巡检结果'}
-                        </Text>
-                        <View style={[{ flex: 1, width: SCREEN_WIDTH - 120, flexWrap: 'wrap' }, sty.list]}>
-                            <Item picker>
-                                <Picker
-                                    mode="dropdown"
-                                    style={{ width: undefined }}
-                                    placeholder={'请选择'+(type === 1 ? '盘点结果': '巡检结果')}
-                                    placeholderStyle={{ color: "#bfc6ea" }}
-                                    placeholderIconColor="#007aff"
-                                    backgroundColor="#fff"
-                                    selectedValue={dict1Index}
-                                    onValueChange={this.onValueChange1.bind(this)}
-                                >
-                                    <Picker.Item label={'请选择'+(type === 1 ? '盘点结果': '巡检结果')} value="" style={{ color: "#007aff", fontSize: 25 }} />
-                                    {dict1.map(i => (
-                                        <Picker.Item label={i.typename} value={i.typecode} />
-                                    ))}
-                                </Picker>
-                            </Item>
+                    {type !== 3 ?
+                        <View style={sty.content}>
+                            <Text style={[sty.opc, sty.width, sty.mgr_5, { fontSize: 15, color: '#39333d' }]}>
+                                {checkType}结果：
+                            </Text>
+                            <View style={[{ flex: 1, width: SCREEN_WIDTH - 120, flexWrap: 'wrap' }, sty.list]}>
+                                <Item picker>
+                                    <Picker
+                                        mode="dropdown"
+                                        style={{ width: undefined }}
+                                        placeholder={'请选择' + checkType + '结果'}
+                                        placeholderStyle={{ color: "#bfc6ea" }}
+                                        placeholderIconColor="#007aff"
+                                        backgroundColor="#fff"
+                                        selectedValue={dict1Index}
+                                        onValueChange={this.onValueChange1.bind(this)}
+                                    >
+                                        <Picker.Item label={'请选择' + checkType + '结果'} value="" style={{ color: "#007aff", fontSize: 25 }} />
+                                        {dict1.map(i => (
+                                            <Picker.Item label={i.typename} value={i.typecode} key={i.typecode}/>
+                                        ))}
+                                    </Picker>
+                                </Item>
+                            </View>
                         </View>
-                    </View>
-                    {type === 2 ?
+                        : null}
+                    {/* {type === 2 ?
                         <View style={sty.content}>
                             <Text style={[sty.opc, sty.width, sty.mgr_5, { fontSize: 15, color: '#39333d' }]}>
                                 巡检位置：
                         </Text>
                             <View style={[{ flex: 1 }, sty.list]}>
                                 <Item picker>
-                                    <KeyboardAvoidingView behavior="padding" style={sty.container}>
-                                        <TextInput
-                                            placeholder="请输入巡检位置"
-                                            style={sty.formInput}
-                                            onChangeText={(text) => {
-                                                this.setState({ position: text });
-                                            }}
-                                        />
-                                    </KeyboardAvoidingView>
+                                    <TextInput
+                                        placeholder="请输入巡检位置"
+                                        style={sty.formInput}
+                                        onChangeText={(text) => {
+                                            this.setState({ position: text });
+                                        }}
+                                    />
                                 </Item>
                             </View>
                         </View>
-                        : null}
-                    {type === 1?
+                        : null} */}
+                    {type === 1 ?
                         <View style={sty.content}>
                             <Text style={[sty.opc, sty.width, sty.mgr_5, { fontSize: 15, color: '#39333d' }]}>
                                 盘点位置：
@@ -478,33 +490,32 @@ class InventoryInfo extends React.Component {
                                     >
                                         <Picker.Item label="请选择盘点位置" value="" style={{ color: "#007aff", fontSize: 25 }} />
                                         {dict2.map(i => (
-                                            <Picker.Item label={i.typename} value={i.typecode} />
+                                            <Picker.Item label={i.typename} value={i.typecode} key={i.typecode}/>
                                         ))}
                                     </Picker>
                                 </Item>
                             </View>
                         </View>
                         : null}
-                    {type === 2 ?
+                    {type === 2 || type === 3 ?
                         <View style={[sty.content]}>
                             <Text style={[sty.opc, sty.width, sty.mgr_5, { fontSize: 15, color: '#39333d' }]}>
-                                备注：
+                                {checkType}结果说明：
                         </Text>
                             <View style={[{ flex: 1 }, sty.list]}>
                                 <Item picker>
-                                    <KeyboardAvoidingView behavior="padding" style={sty.container}>
-                                        <TextInput
-                                            placeholder="请输入备注"
-                                            style={sty.formInput}
-                                            onChangeText={(text) => {
-                                                this.setState({ remark: text });
-                                            }}
-                                        />
-                                    </KeyboardAvoidingView>
+                                    <TextInput
+                                        placeholder="请输入备注"
+                                        style={sty.formInput}
+                                        value={remark}
+                                        onChangeText={(text) => {
+                                            this.setState({ remark: text });
+                                        }}
+                                    />
                                 </Item>
                             </View>
                         </View>
-                    : null}
+                        : null}
                     <View style={[sty.content, { justifyContent: 'center' }]}>
                         <TouchableOpacity onPress={() => this.onSubmit()}>
                             <View style={[sty.tag, { backgroundColor: '#3385ff' }, sty.btnPrimary]}>

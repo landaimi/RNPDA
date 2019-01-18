@@ -50,19 +50,17 @@ export default class Login extends React.Component {
 
   _onClickLogin = async () => {
     const { userName, userPW } = this.state;
-    // if(!userName){
-    //   Alert.alert('提示','请输入用户名！',[{text: '确定', onPress: () => console.log('userName is null')},]);
-    //   return;
-    // }
-    // if(!userPW){
-    //   Alert.alert('提示','请输入密码！',[{text: '确定', onPress: () => console.log('password is null')},]);
-    //   return;
-    // }
+    if(!userName){
+      Alert.alert('提示','请输入用户名！',[{text: '确定', onPress: () => console.log('userName is null')},]);
+      return;
+    }
+    if(!userPW){
+      Alert.alert('提示','请输入密码！',[{text: '确定', onPress: () => console.log('password is null')},]);
+      return;
+    }
     let formData = new FormData();
-    formData.append("userName",'admin');
-    formData.append("password",'123456');
-    // formData.append("userName",userName);
-    // formData.append("password",userPW);
+    formData.append("userName",userName);
+    formData.append("password",userPW);
     const that = this;
     console.log(this.urlConfig+API.location+"login");
     fetch(this.urlConfig+API.location+"login", {
@@ -88,8 +86,8 @@ export default class Login extends React.Component {
         Alert.alert('提示', '请求失败', [{ text: '确定', onPress: () => console.log('request failed! res=', res) },]);
       }
     }).catch(function (e) {
-      console.error("fetch error!", e);
-      Alert.alert('提示', '系统错误', [{ text: '确定', onPress: () => console.log('request error!') },]);
+      console.log("fetch error!", e);
+      Alert.alert('提示', '请求失败！', [{ text: '确定', onPress: () => console.log('request error!') },]);
     });
   };
 

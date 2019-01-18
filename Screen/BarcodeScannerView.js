@@ -50,8 +50,6 @@ export default class BarcodeScannerView extends React.Component {
       this.urlConfig = config.url;
     }
     ScanEvent.on('scanned', this.onScanned);
-    // const { status } = await Permissions.askAsync(Permissions.CAMERA);
-    // this.setState({ hasCameraPermission: status === 'granted' });
     this._willBlurSubscription = this.props.navigation.addListener('willBlur', payload =>
       BackHandler.removeEventListener('hardwareBackPress', this.onBackButtonPressAndroid)
     );
@@ -117,12 +115,17 @@ export default class BarcodeScannerView extends React.Component {
           Alert.alert('提示', '请求失败', [{ text: '确定', onPress: () => console.log('request failed! res=', res) },]);
         }
       }).catch(function (e) {
-        console.error("fetch error!", e);
-        Alert.alert('提示', '系统错误', [{ text: '确定', onPress: () => console.log('request error!') },]);
+        console.log("fetch error!", e);
+        Alert.alert('提示', '请求失败！', [{ text: '确定', onPress: () => console.log('request error!') },]);
       });
 }
 
-  redirect(data) {
+  redirect = (data) => {
+    const { scanSuccess } = this.state;
+    if(scanSuccess){
+      return;
+    }
+    this.setState({ scanSuccess: true });
     const { userId, planId, type, dict1, dict2 } = this.state;
     if (data && userId && planId) {
       let formData = new FormData();
@@ -139,34 +142,34 @@ export default class BarcodeScannerView extends React.Component {
           res.json().then(function (json) {
             if (json.success) {
               const { obj } = json;
-              console.log(json);
               if (obj) {
-                that.setState({ itemInfo: obj.device, itemId: obj.itemId, scanSuccess: true});
+                that.setState({ itemInfo: obj.device, itemId: obj.itemId});
                 that.props.navigation.navigate('InventoryInfo',{
-                  itemId:obj.itemId, itemInfo:obj.device, userId, planId, type, dict1, dict2,
+                  itemId: obj.itemId, itemInfo: obj.device, userId, planId, type, dict1, dict2,
+                  report: obj.report,result: obj.result,position: obj.position,
                 });
               }else{
                 that.props.navigation.navigate('InventoryInfo',{
                   itemId:"", itemInfo:{}, userId, planId, type, dict1, dict2,
                 });
-                Alert.alert('提示', "设备不存在", [{ text: '确定', onPress: () => console.log(json) },]);
+                Alert.alert('提示', "设备不存在", [{ text: '确定', onPress: () => that.setState({scanSuccess: false}) },]);
               }
             } else if (json.msg) {
-              Alert.alert('提示', json.msg, [{ text: '确定', onPress: () => console.log(json) },]);
+              Alert.alert('提示', json.msg, [{ text: '确定', onPress: () => that.setState({scanSuccess: false}) },]);
             }
           });
         } else {
-          Alert.alert('提示', '请求失败', [{ text: '确定', onPress: () => console.log('request failed! res=', res) },]);
+          Alert.alert('提示', '请求失败', [{ text: '确定', onPress: () => that.setState({scanSuccess: false}) },]);
         }
       }).catch(function (e) {
-        console.error("fetch error!", e);
-        Alert.alert('提示', '系统错误', [{ text: '确定', onPress: () => console.log('request error!') },]);
+        console.log("fetch error!", e);
+        Alert.alert('提示', '请求失败！', [{ text: '确定', onPress: () => that.setState({scanSuccess: false}) },]);
       });
     }
   }
 
   render() {
-    const { hasCameraPermission, isCamera } = this.state;
+    const { isCamera } = this.state;
     if(isCamera){
       return (
         <View style={{ flex: 1 , backgroundColor: 'white'}}>

@@ -28,11 +28,11 @@ class ScanScreen extends React.Component {
     }
 
     startAnimation = () => {
-        this.state.moveAnim.setValue(0);
+        this.state.moveAnim.setValue(1);
         Animated.timing(
             this.state.moveAnim,
             {
-                toValue: -200,
+                toValue: -300,
                 duration: 1500,
                 easing: Easing.linear
             }
@@ -41,8 +41,7 @@ class ScanScreen extends React.Component {
     //  识别二维码
     onBarCodeRead = (result) => {
         const { onScanned } = this.props;
-
-        Alert.alert('提示', JSON.stringify(result), [{ text: '确定', onPress: () => console.log(JSON.stringify(result)) },]);
+        onScanned(result.data);
     };
 
     render() {
@@ -75,18 +74,18 @@ export default ScanScreen;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        flexDirection: 'row'
+        flexDirection: 'row',
     },
     preview: {
         flex: 1,
         justifyContent: 'flex-end',
-        alignItems: 'center'
+        alignItems: 'center',
     },
     rectangleContainer: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)'
+        backgroundColor: 'transparent'
     },
     rectangle: {
         height: 280,
